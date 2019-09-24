@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"module": "es6",
+		"sourceMap": true,
+		"moduleResolution": "node",
+		"esModuleInterop": true,
+		"noUnusedLocals": true,
+		"baseUrl": ".",
+		"lib": ["es5", "es6", "es2015", "es7", "es2016", "es2017", "es2018", "dom"],
+		"target": "es5",
+		"outDir": "./dist/"
+	},
+	"include": [
+		"src/**/*.ts"
+	],
+	"exclude": [
+		"./dist/"
+	]
+}

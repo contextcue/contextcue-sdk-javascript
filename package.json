@@ -1,0 +1,22 @@
+{
+	"name": "@contextcue/contextcue-sdk-javascript",
+	"description": "A simple javascript SDK that allows for easy integration of ContextCue ads on a website.",
+	"version": "0.1.0",
+	"main": "dist/adsbycontextcue.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/contextcue/contextcue-sdk-javascript/"
+	},
+	"license": "MPL-2.0",
+	"scripts": {
+		"build": "webpack",
+		"build-watch": "webpack -w --mode='development'"
+	},
+	"devDependencies": {
+		"@types/node": "^12.7.5",
+		"typescript": "^3.5.2",
+		"ts-loader": "^6.1.0",
+		"webpack": "^4.40.2",
+		"webpack-cli": "^3.3.8"
+	}
+}

@@ -1,0 +1,43 @@
+lib-cov
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.swp
+
+pids
+logs
+results
+tmp
+
+# Dependency directory
+/node_modules
+
+# Editors
+.idea
+*.iml
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Ignore built ts files
+dist/**/*
+/**/dist/**/*
+
+# Yarn
+yarn-debug.log
+yar-error.log
+.yarnclean
+
+# NPM
+package-lock.json
+
+# Typescript
+**/src/**/*.map
+**/src/**/*.js
+**/src/**/*.d.ts
+*.tsbuildinfo
