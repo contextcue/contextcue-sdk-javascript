@@ -89,8 +89,8 @@ export function initialize(doc: Document, win: Window) {
                         data.slots.push({
                             id: slotId,
                             fetchId,
-                            w: parseInt(slot.style.width || ''),
-                            h: parseInt(slot.style.height || '')
+                            w: parseInt(slot.style.width || '') || slot.offsetWidth,
+                            h: parseInt(slot.style.height || '') || slot.offsetHeight
                         });
                         fetchedSlots[`${slotId}_${fetchId || ''}`] = true;
                     }
