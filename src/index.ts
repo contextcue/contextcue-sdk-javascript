@@ -1,4 +1,5 @@
 import { initialize } from './adsbycontextcue';
+import debounce from './utilities/debounce';
 
 (function (doc, win) {
 	const ContextCue = initialize(doc, win);
@@ -15,4 +16,9 @@ import { initialize } from './adsbycontextcue';
 			refreshExisting: data && data.detail && data.detail.refreshExisting
 		});
 	});
+	window.addEventListener('resize', debounce(() => {
+		ContextCue.fetch({
+			forceFetch: true
+		});
+	}, 100));
 })(document, window);

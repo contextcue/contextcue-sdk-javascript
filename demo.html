@@ -5,7 +5,8 @@
     <style>
         body {
             background-color: #f5f5f5;
-            width: 1100px;
+            max-width: 1100px;
+            width: 100%;
             margin: 10px auto;
             line-height: 1.2;
             display: flex;
@@ -24,13 +25,39 @@
         }
 
         .main-content {
-            width: 800px;
+            max-width: 800px;
+            width: 100%;
         }
 
         .sidebar {
             flex-grow: 0;
             width: 300px;
             padding: 10px;
+        }
+        @media (max-width: 800px) {
+            .sidebar {
+                display: none;
+            }
+        }
+        .responsive-ad-1 {
+            width: 336px;
+            min-height: 280px;
+        }
+        @media(min-width: 748px) {
+            .responsive-ad-1 {
+                width: 728px;
+                min-height: 90px;
+            }
+        }
+        .responsive-ad-2 {
+            width: 336px;
+            min-height: 280px;
+        }
+        @media(min-width: 1070px) {
+            .responsive-ad-2 {
+                width: 728px;
+                min-height: 90px;
+            }
         }
     </style>
 </head>
@@ -40,7 +67,7 @@
 	<!-- Replace the data-cc-site and data-cc-slot properties with the values from your ContextCue account -->
     <ins
 			style="display:block;"
-            class="adsbycontextcue"
+            class="adsbycontextcue responsive-ad-1"
 			data-cc-site="5a9aa6bf-70ee-466f-8f9a-5c954d5dbc53"
 			data-cc-slot="xsbQ1Tq8V"
 	></ins>
@@ -102,9 +129,9 @@
             tristique
             nunc.
         </div>
-        <div>
-            <ins style="display:block;width:728px;height:90px;margin:0 auto;padding: 10px;"
-                 class="adsbycontextcue"
+        <div style="padding: 10px;text-align: center;">
+            <ins style="display:block;"
+                 class="adsbycontextcue responsive-ad-2"
 				 data-cc-site="5a9aa6bf-70ee-466f-8f9a-5c954d5dbc53"
                  data-cc-slot="Gtr40UV76"
 			></ins>
@@ -166,19 +193,17 @@
         </div>
     </div>
     <div class="sidebar">
-		<!-- An example of using data-cc-id to enable multiple slots with the same id on the same page. -->
-		<!-- This is especially useful for dynamically placed ads -->
+		<!-- An example re-using slot id's on the same page -->
+		<!-- This is especially useful for dynamically placed ads (ex. infinite scroll) -->
         <ins style="display:block;width:300px;height:600px;margin:0 auto;"
              class="adsbycontextcue"
 			 data-cc-site="5a9aa6bf-70ee-466f-8f9a-5c954d5dbc53"
 			 data-cc-slot="xsbQ1Tq8V"
-             data-cc-id="1"
 		></ins>
         <ins style="display:block;width:300px;height:300px;margin:0 auto;padding-top: 10px;"
              class="adsbycontextcue"
 			 data-cc-site="5a9aa6bf-70ee-466f-8f9a-5c954d5dbc53"
              data-cc-slot="xsbQ1Tq8V"
-			 data-cc-id="2"
 		></ins>
     </div>
     <script>
@@ -200,6 +225,12 @@
             }
             console.log(data);
         });
+        // Auto refresh every 2 minutes
+        setInterval(function() {
+            window.dispatchEvent(new CustomEvent('contextcue:fetch',
+                { detail: { refreshExisting: true } }
+            ));
+        }, 2*60*1000);
     </script>
 </div>
 </body>

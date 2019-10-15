@@ -1,19 +1,33 @@
 import { AdSlot } from './types/ad-slot';
 import { FetchOptions } from './types/fetch-options';
+import {calculateAdSize} from './utilities/ad-size';
+import {random} from './utilities/random';
 
 const url = process.env.NODE_ENV === 'production' ? 'https://api.contextcue.com' : 'http://localhost:3000';
+const DEFAULT_SELECTOR = 'ins.adsbycontextcue';
+const DEFAULT_ID_ATTRIBUTE = 'data-cc-slot';
+const DEFAULT_FETCH_ATTRIBUTE = 'data-cc-fetchid';
+
+const buildSlotCacheId = (slot: AdSlot) => `${slot.id}_${slot.fetchId}_${slot.w}_${slot.h}`;
+
+let slotCache: { [key: string]: AdSlot } = {};
+let currentState: { [key: string]: AdSlot } = {};
 
 export function initialize(doc: Document, win: Window) {
     let initialLoadTriggered = false;
     const warn = console.warn;
-    const fetchedSlots: { [key: string]: boolean } = {};
 
     const ContextCue = {
-        selector: 'ins.adsbycontextcue',
         update: (data: AdSlot) => {
-            const fetchIdSelector = data.fetchId ? `[data-cc-id="${data.fetchId}"]` : '';
-            data.selector = `${ContextCue.selector}[data-cc-slot="${data.id}"]${fetchIdSelector}`;
-            const ins = doc.querySelector<HTMLIFrameElement>(data.selector);
+            const stateId = `${data.id}_${data.fetchId}`;
+            if (currentState[stateId] && currentState[stateId].redirectURI === data.redirectURI) {
+                // Ad didn't change, no need to update it
+                return;
+            }
+            currentState[stateId] = data;
+            slotCache[buildSlotCacheId(data)] = data;
+            const selector = `${DEFAULT_SELECTOR}[${DEFAULT_ID_ATTRIBUTE}="${data.id}"][${DEFAULT_FETCH_ATTRIBUTE}="${data.fetchId}"]`;
+            const ins = doc.querySelector<HTMLIFrameElement>(selector);
             if (ins && ins.parentNode) {
                 if (data.html) {
                     const iframe = ContextCue.createFrame(data);
@@ -45,8 +59,7 @@ export function initialize(doc: Document, win: Window) {
             const iframe = doc.createElement('iframe');
             const style = iframe.style;
 
-            // @ts-ignore
-            iframe.sandbox = 'allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-scripts';
+            iframe.sandbox.add('allow-same-origin', 'allow-popups', 'allow-popups-to-escape-sandbox', 'allow-scripts');
             iframe.frameBorder = '0';
             iframe.scrolling = 'no';
             iframe.width = String(data.w);
@@ -59,15 +72,11 @@ export function initialize(doc: Document, win: Window) {
 
             return iframe;
         },
-        fetch: (options: FetchOptions = {refreshExisting: false}) => {
-            const {forceFetch, refreshExisting} = options;
-            if (initialLoadTriggered && !forceFetch) {
-                return;
-            }
-            initialLoadTriggered = true;
-            const slots = doc.querySelectorAll<HTMLElement>(ContextCue.selector);
+        buildSlotsToFetch: () => {
+            const slots = doc.querySelectorAll<HTMLElement>(DEFAULT_SELECTOR);
             if (slots.length === 0) {
-                return warn('No ad slots found');
+                warn('No ad slots found');
+                return;
             }
 
             const currentDate = new Date();
@@ -77,26 +86,57 @@ export function initialize(doc: Document, win: Window) {
                 dow: currentDate.getDay(),
                 site: slots[0].getAttribute('data-cc-site')
             };
+
             for (let i = 0; i < slots.length; i++) {
                 const slot = slots[i];
-                const slotId = slot.getAttribute('data-cc-slot');
+                const slotId = slot.getAttribute(DEFAULT_ID_ATTRIBUTE);
                 if (!slotId || slotId === '') {
-                    warn(`data-cc-slot attribute missing`);
-                } else {
-                    const fetchId = slot.getAttribute('data-cc-id') || undefined;
-                    const hasFetched = fetchedSlots[`${slotId}_${fetchId || ''}`];
-                    if (refreshExisting || !hasFetched) {
-                        data.slots.push({
-                            id: slotId,
-                            fetchId,
-                            w: parseInt(slot.style.width || '') || slot.offsetWidth,
-                            h: parseInt(slot.style.height || '') || slot.offsetHeight
-                        });
-                        fetchedSlots[`${slotId}_${fetchId || ''}`] = true;
+                    warn(`${DEFAULT_ID_ATTRIBUTE} attribute missing`);
+                } else if (slot.style.display !== 'none') {
+                    const adSize = calculateAdSize(slot);
+                    if (!adSize) {
+                        warn(`No ad size found for slotId: ${slotId}`);
+                        break;
+                    }
+                    let fetchId = slot.getAttribute(DEFAULT_FETCH_ATTRIBUTE);
+                    if (!fetchId) {
+                        // Setting a fetchId allows multiple of the same slot on the same page (ex. infinite scroll)
+                        fetchId = random();
+                        slot.setAttribute(DEFAULT_FETCH_ATTRIBUTE, fetchId);
+                    }
+                    const newSlot = {
+                        id: slotId,
+                        fetchId,
+                        w: adSize.width,
+                        h: adSize.height
+                    };
+
+                    const slotCacheId = buildSlotCacheId(newSlot);
+                    const previousFetch = slotCache[slotCacheId];
+                    if (!previousFetch) {
+                        data.slots.push(newSlot);
+                        slotCache[slotCacheId] = newSlot;
+                    } else {
+                        ContextCue.update(previousFetch);
                     }
                 }
             }
-            if (data.slots.length === 0) {
+
+            return data;
+        },
+        fetch: (options: FetchOptions = {refreshExisting: false}) => {
+            const {forceFetch, refreshExisting} = options;
+            if (initialLoadTriggered && !forceFetch) {
+                return;
+            }
+            if (refreshExisting) {
+                // Clearing the ad cache will force all ads to be refreshed
+                slotCache = {};
+            }
+            initialLoadTriggered = true;
+
+            const data = ContextCue.buildSlotsToFetch();
+            if (!data || data.slots.length === 0) {
                 // no slots to fetch
                 return;
             }
@@ -106,7 +146,6 @@ export function initialize(doc: Document, win: Window) {
             req.overrideMimeType('text/plain');
             req.open('GET', `${url}/ad-fetch/serve?q=${q}`, true);
             req.setRequestHeader('Content-Type', 'text/plain');
-            req.setRequestHeader('If-Unmodified-Since', new Date().getTime().toString());
 
             req.onload = () => {
                 try {

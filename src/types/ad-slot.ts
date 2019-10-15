@@ -3,6 +3,6 @@ export type AdSlot = {
 	w: number;
 	h: number;
 	html?: string;
-	fetchId?: string;
-	selector?: string;
+	fetchId: string;
+	redirectURI?: string;
 };
