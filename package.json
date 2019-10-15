@@ -1,7 +1,7 @@
 {
 	"name": "@contextcue/contextcue-sdk-javascript",
 	"description": "A simple javascript SDK that allows for easy integration of ContextCue ads on a website.",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"main": "dist/adsbycontextcue.js",
 	"repository": {
 		"type": "git",
